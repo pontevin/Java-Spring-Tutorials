@@ -16,10 +16,16 @@ import javax.tools.JavaFileObject;
 
 import com.google.auto.service.AutoService;
 
-@SupportedAnnotationTypes("com.baeldung.annotation.processor.BuilderProperty")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @AutoService(Processor.class)
 public class BuilderProcessor extends AbstractProcessor {
+
+    private static final String ANNOTATION_CLASS_NAME = BuilderProperty.class.getName();
+
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        return Set.of(ANNOTATION_CLASS_NAME);
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -27,12 +33,15 @@ public class BuilderProcessor extends AbstractProcessor {
 
             Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
 
-            Map<Boolean, List<Element>> annotatedMethods = annotatedElements.stream().collect(Collectors.partitioningBy(element -> ((ExecutableType) element.asType()).getParameterTypes().size() == 1 && element.getSimpleName().toString().startsWith("set")));
+            Map<Boolean, List<Element>> annotatedMethods =
+                annotatedElements.stream().collect(
+                    Collectors.partitioningBy(element -> ((ExecutableType) element.asType()).getParameterTypes().size() == 1 && element.getSimpleName().toString().startsWith("set")));
 
             List<Element> setters = annotatedMethods.get(true);
             List<Element> otherMethods = annotatedMethods.get(false);
 
-            otherMethods.forEach(element -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@BuilderProperty must be applied to a setXxx method with a single argument", element));
+            otherMethods.forEach(element ->
+                printError("@BuilderProperty must be applied to a setXxx method with a single argument", element));
 
             if (setters.isEmpty()) {
                 continue;
@@ -51,6 +60,10 @@ public class BuilderProcessor extends AbstractProcessor {
         }
 
         return true;
+    }
+
+    private void printError(String message, Element element) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
     }
 
     private void writeBuilderFile(String className, Map<String, String> setterMap) throws IOException {

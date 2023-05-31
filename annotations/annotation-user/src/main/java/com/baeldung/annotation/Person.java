@@ -8,6 +8,7 @@ public class Person {
 
     private String name;
 
+    @BuilderProperty
     public int getAge() {
         return age;
     }
@@ -17,6 +18,7 @@ public class Person {
         this.age = age;
     }
 
+    @BuilderProperty
     public String getName() {
         return name;
     }
